@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رفع تقرير | إعمارنا</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+<style>
+.page { max-width: 750px; margin: 2rem auto; padding: 0 1rem; }
+.progress-input { width: 100%; }
+.progress-preview {
+  display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem;
+}
+.progress-bar-big { flex: 1; background: var(--border); border-radius: 10px; height: 12px; overflow: hidden; }
+.progress-fill-big { height: 100%; background: var(--secondary); border-radius: 10px; transition: width 0.3s; }
+.progress-num { font-weight: 800; color: var(--primary); min-width: 40px; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">🏗️ إعمارنا</a>
+    <div class="nav-links">
+      <a href="index.html">الرئيسية</a>
+      <a href="dashboard.html">لوحة التحكم</a>
+    </div>
+    <div class="nav-auth">
+      <a href="dashboard.html" class="btn-nav">لوحة التحكم</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="card">
+    <h1 style="color:var(--primary);font-size:1.7rem;margin-bottom:0.5rem">📊 رفع تقرير تقدم</h1>
+    <p style="color:var(--text-light);margin-bottom:1.5rem;border-bottom:2px solid var(--bg);padding-bottom:1rem">
+      رفع تقرير دوري عن تقدم المشروع لمراجعة الجهة الحكومية
+    </p>
+
+    <div id="alert-box"></div>
+
+    <!-- اختيار المشروع -->
+    <div class="form-group">
+      <label>المشروع *</label>
+      <select id="projectId" onchange="onProjectChange()">
+        <option value="">اختر المشروع...</option>
+      </select>
+    </div>
+
+    <!-- نسبة الإنجاز -->
+    <div class="form-group">
+      <label>نسبة الإنجاز الحالية *</label>
+      <input type="range" id="progress" min="0" max="100" value="0" 
+        class="progress-input" oninput="updateProgress(this.value)">
+      <div class="progress-preview">
+        <div class="progress-bar-big">
+          <div class="progress-fill-big" id="progress-bar" style="width:0%"></div>
+        </div>
+        <span class="progress-num" id="progress-num">0%</span>
+      </div>
+    </div>
+
+    <!-- وصف التقدم -->
+    <div class="form-group">
+      <label>وصف التقدم المحرز *</label>
+      <textarea id="description" placeholder="اشرح ما تم إنجازه في هذه الفترة بالتفصيل..." style="min-height:120px"></textarea>
+    </div>
+
+    <!-- التحديات -->
+    <div class="form-group">
+      <label>التحديات والعقبات</label>
+      <textarea id="challenges" placeholder="اذكر أي تحديات أو عقبات واجهتها..." style="min-height:80px"></textarea>
+    </div>
+
+    <!-- الخطوات القادمة -->
+    <div class="form-group">
+      <label>الخطوات القادمة</label>
+      <textarea id="nextSteps" placeholder="ما الذي تخطط للقيام به في الفترة القادمة..." style="min-height:80px"></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="submitReport()" id="submit-btn" style="padding:1rem;font-size:1.1rem;margin-top:0.5rem">
+      📤 رفع التقرير للمراجعة
+    </button>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2026 منصة إعمارنا - جامعة كرري</p>
+</footer>
+
+<script>
+const API = 'http://localhost:5000/api';
+const user = JSON.parse(localStorage.getItem('emarna_user') || 'null');
+
+if (!user || (user.role !== 'organization' && user.role !== 'admin')) {
+  alert('هذه الصفحة للمنظمات فقط');
+  window.location.href = 'dashboard.html';
+}
+
+function showAlert(msg, type = 'error') {
+  const colors = { error: 'alert-error', success: 'alert-success' };
+  const el = document.getElementById('alert-box');
+  el.innerHTML = `<div class="alert ${colors[type]}">${msg}</div>`;
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateProgress(val) {
+  document.getElementById('progress-bar').style.width = val + '%';
+  document.getElementById('progress-num').textContent = val + '%';
+}
+
+async function loadProjects() {
+  try {
+    const data = await fetch(`${API}/projects`).then(r => r.json());
+    const select = document.getElementById('projectId');
+    const projects = data.data || [];
+    projects.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = `${p.name} - ${p.district}`;
+      opt.dataset.name = p.name;
+      opt.dataset.progress = p.progress || 0;
+      select.appendChild(opt);
+    });
+  } catch(e) {
+    showAlert('تعذّر تحميل المشاريع - تأكد من تشغيل الخادم');
+  }
+}
+
+function onProjectChange() {
+  const select = document.getElementById('projectId');
+  const opt = select.options[select.selectedIndex];
+  if (opt.dataset.progress) {
+    const p = opt.dataset.progress;
+    document.getElementById('progress').value = p;
+    updateProgress(p);
+  }
+}
+
+async function submitReport() {
+  const projectId = document.getElementById('projectId').value;
+  const description = document.getElementById('description').value.trim();
+  const progress = document.getElementById('progress').value;
+  const btn = document.getElementById('submit-btn');
+
+  if (!projectId) return showAlert('يرجى اختيار المشروع');
+  if (!description) return showAlert('يرجى كتابة وصف التقدم');
+
+  const select = document.getElementById('projectId');
+  const projectName = select.options[select.selectedIndex].dataset.name || '';
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الرفع...';
+
+  try {
+    const res = await fetch(`${API}/org-reports`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        projectId, projectName,
+        organizationName: user.organization || user.name,
+        progress: parseInt(progress),
+        description,
+        challenges: document.getElementById('challenges').value,
+        nextSteps: document.getElementById('nextSteps').value,
+        submittedBy: user.name
+      })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      showAlert('✅ ' + data.message, 'success');
+      setTimeout(() => window.location.href = 'dashboard.html', 2000);
+    } else {
+      showAlert('❌ ' + data.message);
+    }
+  } catch(e) {
+    showAlert('🔌 تعذّر الاتصال بالخادم');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 رفع التقرير للمراجعة';
+  }
+}
+
+loadProjects();
+</script>
+</body>
+</html>

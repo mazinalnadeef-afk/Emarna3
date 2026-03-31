@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إعمارنا | منصة إعادة الإعمار</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">🏗️ إعمارنا</a>
+    <div class="nav-links">
+      <a href="index.html" class="active">الرئيسية</a>
+      <a href="report.html">أبلغ عن ضرر</a>
+      <a href="projects.html">المشاريع</a>
+    </div>
+    <div class="nav-auth" id="nav-auth">
+      <a href="login.html" class="btn-nav-outline">تسجيل الدخول</a>
+      <a href="register.html" class="btn-nav">إنشاء حساب</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div>
+    <h1>معاً نُعيد بناء<br><span class="highlight">ولاية الخرطوم</span></h1>
+    <p>منصة رقمية لتنسيق جهود إعادة الإعمار بين الحكومة والمنظمات والمجتمع</p>
+    <div class="hero-buttons">
+      <a href="report.html" class="btn btn-gold">📋 أبلغ عن ضرر الآن</a>
+      <a href="projects.html" class="btn btn-secondary">🏗️ تصفح المشاريع</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-card">
+        <span class="stat-number" id="stat-reports">--</span>
+        <span class="stat-label">بلاغ مُسجَّل</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="stat-projects">--</span>
+        <span class="stat-label">مشروع جارٍ</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-number" id="stat-done">--</span>
+        <span class="stat-label">مشروع مكتمل</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- كيف يعمل -->
+<section style="padding:4rem 2rem; max-width:1200px; margin:0 auto; text-align:center">
+  <h2 style="font-size:2rem; font-weight:800; color:var(--primary); margin-bottom:2.5rem">كيف تعمل المنصة؟</h2>
+  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem">
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem; margin-bottom:1rem">📍</div>
+      <h3 style="color:var(--primary); margin-bottom:0.5rem">١. أبلغ عن الضرر</h3>
+      <p style="color:var(--text-light)">أرسل بلاغاً بالضرر مع الصور والموقع</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem; margin-bottom:1rem">🔍</div>
+      <h3 style="color:var(--primary); margin-bottom:0.5rem">٢. المراجعة والتقييم</h3>
+      <p style="color:var(--text-light)">تراجع الجهات المختصة وتحدد الأولويات</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem; margin-bottom:1rem">🏗️</div>
+      <h3 style="color:var(--primary); margin-bottom:0.5rem">٣. تنفيذ المشروع</h3>
+      <p style="color:var(--text-light)">تُسند المشاريع للمنظمات وتُتابع نسبة الإنجاز</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem; margin-bottom:1rem">✅</div>
+      <h3 style="color:var(--primary); margin-bottom:0.5rem">٤. الإنجاز والتسليم</h3>
+      <p style="color:var(--text-light)">يُسجَّل الإنجاز ويُبلَّغ المجتمع بالنتائج</p>
+    </div>
+  </div>
+</section>
+
+<!-- آخر البلاغات -->
+<section style="padding:3rem 2rem; background:white">
+  <div style="max-width:1200px; margin:0 auto">
+    <h2 style="font-size:1.8rem; font-weight:800; color:var(--primary); margin-bottom:1.5rem; text-align:center">آخر البلاغات</h2>
+    <div id="recent-reports" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.5rem">
+      <div class="loading"><div class="spinner"></div>جاري التحميل...</div>
+    </div>
+    <div style="text-align:center; margin-top:2rem">
+      <a href="report.html" class="btn btn-primary">أضف بلاغاً جديداً ←</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>© 2026 منصة إعمارنا - جامعة كرري، كلية علوم الحاسوب، قسم هندسة البرمجيات</p>
+</footer>
+
+<script>
+const API = 'http://localhost:5000/api';
+
+// تحديث navbar حسب حالة تسجيل الدخول
+const user = JSON.parse(localStorage.getItem('emarna_user') || 'null');
+if (user) {
+  document.getElementById('nav-auth').innerHTML = `
+    <span style="color:white;font-weight:600">👤 ${user.name}</span>
+    <a href="dashboard.html" class="btn-nav">لوحة التحكم</a>
+    <button onclick="logout()" class="btn-nav-outline">خروج</button>
+  `;
+}
+function logout() {
+  localStorage.clear();
+  window.location.href = 'index.html';
+}
+
+// تحميل الإحصائيات
+async function loadStats() {
+  try {
+    const [r, p] = await Promise.all([
+      fetch(`${API}/reports/stats/summary`).then(r => r.json()),
+      fetch(`${API}/projects/stats/summary`).then(r => r.json())
+    ]);
+    animateNum('stat-reports', r.data?.total || 0);
+    animateNum('stat-projects', p.data?.active || 0);
+    animateNum('stat-done', p.data?.done || 0);
+  } catch(e) {
+    ['stat-reports','stat-projects','stat-done'].forEach(id => {
+      document.getElementById(id).textContent = '0';
+    });
+  }
+}
+
+function animateNum(id, target) {
+  const el = document.getElementById(id);
+  let n = 0;
+  const step = Math.ceil(target / 30);
+  const t = setInterval(() => {
+    n = Math.min(n + step, target);
+    el.textContent = n;
+    if (n >= target) clearInterval(t);
+  }, 50);
+}
+
+// تحميل آخر البلاغات
+async function loadReports() {
+  const container = document.getElementById('recent-reports');
+  try {
+    const res = await fetch(`${API}/reports`);
+    const data = await res.json();
+    const reports = (data.data || []).slice(0, 6);
+
+    if (!reports.length) {
+      container.innerHTML = '<p style="text-align:center;color:var(--text-light);grid-column:1/-1">لا توجد بلاغات حتى الآن</p>';
+      return;
+    }
+
+    const severityColors = { 'حرجة': '#e74c3c', 'عالية': '#f39c12', 'متوسطة': '#3498db', 'منخفضة': '#2ecc71' };
+    const statusNames = { 'pending': 'معلق', 'reviewing': 'قيد المراجعة', 'approved': 'موافق عليه', 'done': 'منجز', 'rejected': 'مرفوض' };
+
+    container.innerHTML = reports.map(r => `
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem">
+          <span style="background:${severityColors[r.severity]||'#6c757d'};color:white;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.8rem;font-weight:700">${r.severity}</span>
+          <span style="font-size:0.8rem;color:var(--text-light)">${r.district}</span>
+        </div>
+        <h3 style="font-size:1rem;margin-bottom:0.5rem">${r.damageType}</h3>
+        <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.8rem">${r.address}</p>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span class="badge badge-${r.status}">${statusNames[r.status]||r.status}</span>
+          <span style="font-size:0.8rem;color:var(--text-light)">${r.reporterName}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    container.innerHTML = '<p style="text-align:center;color:var(--text-light);grid-column:1/-1">تعذّر تحميل البلاغات - تأكد من تشغيل الخادم</p>';
+  }
+}
+
+loadStats();
+loadReports();
+</script>
+</body>
+</html>

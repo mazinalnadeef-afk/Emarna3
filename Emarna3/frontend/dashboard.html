@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة التحكم | إعمارنا</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+<style>
+.dashboard { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 255px; background: var(--primary); color: white;
+  position: fixed; height: 100vh; overflow-y: auto; z-index: 100;
+  display: flex; flex-direction: column;
+}
+.sidebar-header { padding: 1.5rem; background: var(--primary-dark); }
+.sidebar-header h2 { font-size: 1.3rem; font-weight: 900; }
+.sidebar-header p { font-size: 0.8rem; opacity: 0.7; margin-top: 0.2rem; }
+.user-box {
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.05);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.user-box .uname { font-weight: 700; font-size: 0.95rem; }
+.user-box .urole {
+  display: inline-block; background: #ffd700; color: var(--primary-dark);
+  padding: 0.15rem 0.6rem; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 700; margin-top: 0.3rem;
+}
+.sidebar-nav { padding: 0.8rem 0; flex: 1; }
+.menu-btn {
+  display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.8rem 1.5rem; cursor: pointer;
+  color: rgba(255,255,255,0.8); font-weight: 600;
+  border: none; background: none; width: 100%;
+  font-family: 'Cairo', sans-serif; font-size: 0.95rem;
+  transition: all 0.2s; text-align: right;
+  border-right: 3px solid transparent;
+}
+.menu-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+.menu-btn.active { background: rgba(255,255,255,0.15); color: white; border-right-color: #ffd700; }
+.menu-btn .micon { font-size: 1.1rem; width: 22px; text-align: center; }
+.menu-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 0.5rem 1.5rem; }
+.logout-btn { color: #ff6b6b !important; }
+.main { margin-right: 255px; flex: 1; padding: 2rem; background: var(--bg); min-height: 100vh; }
+.page-header { margin-bottom: 2rem; }
+.page-header h1 { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+.page-header p { color: var(--text-light); font-size: 0.9rem; margin-top: 0.3rem; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1.2rem; margin-bottom: 2rem; }
+.kpi-card {
+  background: white; border-radius: var(--radius); padding: 1.5rem;
+  box-shadow: var(--shadow); text-align: center;
+  border-top: 4px solid var(--kcolor, var(--primary));
+  transition: transform 0.2s;
+}
+.kpi-card:hover { transform: translateY(-3px); }
+.kpi-num { font-size: 2.2rem; font-weight: 900; color: var(--kcolor, var(--primary)); }
+.kpi-lbl { font-size: 0.85rem; color: var(--text-light); font-weight: 600; margin-top: 0.3rem; }
+.sec-card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+.sec-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem; padding-bottom: 0.8rem;
+  border-bottom: 2px solid var(--bg);
+}
+.sec-header h3 { font-size: 1.1rem; font-weight: 800; color: var(--primary); }
+.filter-row { display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.fselect {
+  padding: 0.5rem 1rem; border-radius: 8px; border: 2px solid var(--border);
+  font-family: 'Cairo', sans-serif; font-size: 0.9rem; background: white; cursor: pointer;
+}
+.fselect:focus { outline: none; border-color: var(--primary); }
+.status-select {
+  padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid var(--border);
+  font-family: 'Cairo', sans-serif; font-size: 0.85rem; cursor: pointer;
+}
+.tab-section { display: none; }
+.tab-section.active { display: block; }
+.empty { text-align: center; padding: 3rem; color: var(--text-light); }
+.empty .eicon { font-size: 3rem; margin-bottom: 1rem; }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { margin-right: 0; padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2>🏗️ إعمارنا</h2>
+      <p>لوحة التحكم</p>
+    </div>
+    <div class="user-box">
+      <div class="uname" id="uname">...</div>
+      <div class="urole" id="urole">...</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+  </aside>
+
+  <main class="main">
+    <div id="alert-box"></div>
+
+    <!-- نظرة عامة -->
+    <div id="sec-overview" class="tab-section active">
+      <div class="page-header">
+        <h1>📊 نظرة عامة</h1>
+        <p id="overview-desc">ملخص شامل للبيانات</p>
+      </div>
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="loading"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- البلاغات -->
+    <div id="sec-reports" class="tab-section">
+      <div class="page-header">
+        <h1>📋 البلاغات</h1>
+        <p id="reports-desc"></p>
+      </div>
+      <div class="sec-card">
+        <div class="sec-header">
+          <h3>قائمة البلاغات</h3>
+          <div class="filter-row">
+            <select class="fselect" id="f-status" onchange="filterReports()">
+              <option value="">كل الحالات</option>
+              <option value="pending">معلق</option>
+              <option value="reviewing">قيد المراجعة</option>
+              <option value="approved">موافق عليه</option>
+              <option value="done">منجز</option>
+              <option value="rejected">مرفوض</option>
+            </select>
+            <select class="fselect" id="f-severity" onchange="filterReports()">
+              <option value="">كل مستويات الخطورة</option>
+              <option value="حرجة">حرجة</option>
+              <option value="عالية">عالية</option>
+              <option value="متوسطة">متوسطة</option>
+              <option value="منخفضة">منخفضة</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr id="reports-head"></tr></thead>
+            <tbody id="reports-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- المشاريع -->
+    <div id="sec-projects" class="tab-section">
+      <div class="page-header">
+        <h1>🏗️ المشاريع</h1>
+        <p id="projects-desc"></p>
+      </div>
+      <div class="sec-card">
+        <div class="sec-header">
+          <h3>قائمة المشاريع</h3>
+          <button class="btn btn-primary btn-sm" id="add-proj-btn" onclick="showAddProject()" style="display:none">+ إضافة مشروع</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>اسم المشروع</th><th>القطاع</th><th>المنطقة</th>
+                <th>الإنجاز</th><th>الحالة</th><th id="proj-action-th"></th>
+              </tr>
+            </thead>
+            <tbody id="projects-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- تقارير المنظمات -->
+    <div id="sec-org-reports" class="tab-section">
+      <div class="page-header">
+        <h1>📈 تقارير المنظمات</h1>
+        <p id="org-reports-desc"></p>
+      </div>
+      <div class="sec-card">
+        <div class="sec-header">
+          <h3>قائمة التقارير</h3>
+          <div style="display:flex;gap:0.8rem;align-items:center">
+            <select class="fselect" id="f-report-status" onchange="filterOrgReports()">
+              <option value="">كل الحالات</option>
+              <option value="pending">ينتظر المراجعة</option>
+              <option value="approved">موافق عليه</option>
+              <option value="rejected">مرفوض</option>
+            </select>
+            <a href="org-report.html" class="btn btn-primary btn-sm" id="add-report-btn" style="display:none">+ رفع تقرير</a>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>المشروع</th><th>المنظمة</th><th>الإنجاز</th>
+                <th>الوصف</th><th>التاريخ</th><th>الحالة</th><th id="org-report-action-th"></th>
+              </tr>
+            </thead>
+            <tbody id="org-reports-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- المستخدمون -->
+    <div id="sec-users" class="tab-section">
+      <div class="page-header">
+        <h1>👥 المستخدمون</h1>
+        <p>إدارة الحسابات والصلاحيات</p>
+      </div>
+      <div class="sec-card">
+        <div class="sec-header"><h3>المستخدمون المسجلون</h3></div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>الاسم</th><th>البريد</th><th>الدور</th>
+                <th>المنظمة</th><th>الحالة</th><th>إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Modal إضافة مشروع -->
+<div id="proj-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;display:none;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:2rem;width:90%;max-width:500px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <h3 style="color:var(--primary);font-size:1.2rem;font-weight:800">➕ إضافة مشروع جديد</h3>
+      <button onclick="closeModal()" style="background:none;border:none;font-size:1.5rem;cursor:pointer">×</button>
+    </div>
+    <div class="form-group"><label>اسم المشروع *</label><input type="text" id="proj-name"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>القطاع *</label>
+        <select id="proj-sector">
+          <option value="">اختر</option>
+          <option>صحة</option><option>تعليم</option><option>بنية تحتية</option>
+          <option>مياه وصرف</option><option>كهرباء</option><option>إسكان</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>المنطقة *</label>
+        <select id="proj-district">
+          <option value="">اختر</option>
+          <option>أم درمان</option><option>بحري</option><option>الخرطوم</option>
+          <option>كرري</option><option>شرق النيل</option><option>جبل أولياء</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>الوصف</label><textarea id="proj-desc" style="min-height:80px"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>الميزانية (دولار)</label><input type="number" id="proj-budget" min="0"></div>
+      <div class="form-group"><label>تاريخ البداية</label><input type="date" id="proj-start"></div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="addProject()">حفظ المشروع</button>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+const user = JSON.parse(localStorage.getItem('emarna_user') || 'null');
+const token = localStorage.getItem('emarna_token') || '';
+
+if (!user) window.location.href = 'login.html';
+
+const role = user?.role || 'community';
+const roleNames = { admin: 'مسؤول النظام', government: 'جهة حكومية', organization: 'منظمة', community: 'مواطن' };
+
+document.getElementById('uname').textContent = user?.name || 'مستخدم';
+document.getElementById('urole').textContent = roleNames[role] || role;
+
+// ─── بناء القائمة ─────────────────────────────────────────
+const menuItems = [
+  { id: 'overview',    icon: '📊', label: 'نظرة عامة',       roles: ['admin','government','organization','community'] },
+  { id: 'reports',     icon: '📋', label: 'البلاغات',        roles: ['admin','government','organization','community'] },
+  { id: 'projects',    icon: '🏗️', label: 'المشاريع',       roles: ['admin','government','organization'] },
+  { id: 'org-reports', icon: '📈', label: 'تقارير المنظمات', roles: ['admin','government','organization'] },
+  { id: 'users',       icon: '👥', label: 'المستخدمون',      roles: ['admin','government'] },
+];
+
+const nav = document.getElementById('sidebar-nav');
+let html = '';
+menuItems.forEach(item => {
+  if (item.roles.includes(role)) {
+    html += `<button class="menu-btn ${item.id==='overview'?'active':''}" id="mbtn-${item.id}" onclick="showSection('${item.id}')">
+      <span class="micon">${item.icon}</span>${item.label}
+    </button>`;
+  }
+});
+html += `<div class="menu-divider"></div>
+<a href="report.html" style="text-decoration:none">
+  <button class="menu-btn"><span class="micon">➕</span>إضافة بلاغ</button>
+</a>
+<button class="menu-btn logout-btn" onclick="logout()"><span class="micon">🚪</span>تسجيل الخروج</button>`;
+nav.innerHTML = html;
+
+function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+
+function showSection(name) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`sec-${name}`)?.classList.add('active');
+  document.getElementById(`mbtn-${name}`)?.classList.add('active');
+  if (name === 'reports') loadReports();
+  if (name === 'projects') loadProjects();
+  if (name === 'org-reports') loadOrgReports();
+  if (name === 'users') loadUsers();
+}
+
+function showAlert(msg, type = 'success') {
+  const colors = { success: 'alert-success', error: 'alert-error' };
+  document.getElementById('alert-box').innerHTML = `<div class="alert ${colors[type]}">${msg}</div>`;
+  setTimeout(() => document.getElementById('alert-box').innerHTML = '', 4000);
+}
+
+// ─── الإحصائيات ───────────────────────────────────────────
+async function loadOverview() {
+  const grid = document.getElementById('kpi-grid');
+  try {
+    const [r, p] = await Promise.all([
+      fetch(`${API}/reports/stats/summary`).then(x => x.json()),
+      fetch(`${API}/projects/stats/summary`).then(x => x.json())
+    ]);
+    const rd = r.data || {}, pd = p.data || {};
+    let kpis = [];
+
+    if (role === 'admin' || role === 'government') {
+      document.getElementById('overview-desc').textContent = 'نظرة شاملة على جميع العمليات';
+      kpis = [
+        { label: 'إجمالي البلاغات', value: rd.total||0, color: '#e74c3c' },
+        { label: 'بلاغات معلقة', value: rd.pending||0, color: '#f39c12' },
+        { label: 'بلاغات حرجة', value: rd.critical||0, color: '#c0392b' },
+        { label: 'مشاريع نشطة', value: pd.active||0, color: '#2ecc71' },
+        { label: 'مشاريع مكتملة', value: pd.done||0, color: '#3498db' },
+        { label: 'متوسط الإنجاز', value: (pd.avgProgress||0)+'%', color: '#9b59b6' },
+      ];
+    } else if (role === 'organization') {
+      document.getElementById('overview-desc').textContent = 'البلاغات المتاحة للتدخل';
+      kpis = [
+        { label: 'بلاغات معتمدة', value: rd.approved||0, color: '#2ecc71' },
+        { label: 'مشاريع نشطة', value: pd.active||0, color: '#3498db' },
+        { label: 'مشاريع مكتملة', value: pd.done||0, color: '#9b59b6' },
+      ];
+    } else {
+      document.getElementById('overview-desc').textContent = 'متابعة بلاغاتك';
+      kpis = [
+        { label: 'بلاغاتي', value: rd.total||0, color: '#1a4f8a' },
+        { label: 'قيد المعالجة', value: rd.reviewing||0, color: '#f39c12' },
+        { label: 'منجز', value: rd.done||0, color: '#2ecc71' },
+      ];
+    }
+
+    grid.innerHTML = kpis.map(k => `
+      <div class="kpi-card" style="--kcolor:${k.color}">
+        <div class="kpi-num">${k.value}</div>
+        <div class="kpi-lbl">${k.label}</div>
+      </div>
+    `).join('');
+  } catch(e) {
+    grid.innerHTML = '<p style="color:red;text-align:center">تعذّر تحميل البيانات - تأكد من تشغيل الخادم</p>';
+  }
+}
+
+// ─── البلاغات ─────────────────────────────────────────────
+let allReports = [];
+
+async function loadReports() {
+  const head = document.getElementById('reports-head');
+  const body = document.getElementById('reports-body');
+
+  if (role === 'admin' || role === 'government') {
+    head.innerHTML = '<th>نوع الضرر</th><th>المنطقة</th><th>المُبلِّغ</th><th>الهاتف</th><th>الخطورة</th><th>التاريخ</th><th>الحالة</th><th>تحديث</th>';
+    document.getElementById('reports-desc').textContent = 'جميع البلاغات الواردة - يمكنك تحديث حالتها';
+  } else if (role === 'organization') {
+    head.innerHTML = '<th>نوع الضرر</th><th>المنطقة</th><th>العنوان</th><th>الخطورة</th><th>التاريخ</th><th>الحالة</th>';
+    document.getElementById('reports-desc').textContent = 'البلاغات المعتمدة المتاحة للتدخل';
+  } else {
+    head.innerHTML = '<th>نوع الضرر</th><th>المنطقة</th><th>العنوان</th><th>الخطورة</th><th>التاريخ</th><th>الحالة</th>';
+    document.getElementById('reports-desc').textContent = 'بلاغاتي المُرسلة';
+  }
+
+  body.innerHTML = '<tr><td colspan="8"><div class="loading"><div class="spinner"></div>جاري التحميل...</div></td></tr>';
+
+  try {
+    const data = await fetch(`${API}/reports`).then(r => r.json());
+    allReports = data.data || [];
+    filterReports();
+  } catch(e) {
+    body.innerHTML = `<tr><td colspan="8" style="text-align:center;color:red">تعذّر تحميل البيانات</td></tr>`;
+  }
+}
+
+function filterReports() {
+  const status = document.getElementById('f-status')?.value || '';
+  const severity = document.getElementById('f-severity')?.value || '';
+  let list = [...allReports];
+
+  if (role === 'organization') list = list.filter(r => r.status === 'approved');
+  if (role === 'community') list = list.filter(r => r.reporterEmail === user?.email);
+  if (status) list = list.filter(r => r.status === status);
+  if (severity) list = list.filter(r => r.severity === severity);
+
+  renderReports(list);
+}
+
+function renderReports(list) {
+  const body = document.getElementById('reports-body');
+  const smap = { pending:'معلق', reviewing:'قيد المراجعة', approved:'موافق عليه', done:'منجز', rejected:'مرفوض' };
+  const sevMap = { 'حرجة':'critical', 'عالية':'high', 'متوسطة':'medium', 'منخفضة':'low' };
+
+  if (!list.length) {
+    body.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="eicon">📭</div><p>لا توجد بلاغات</p></div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = list.map(r => {
+    const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar') : '-';
+    const sevBadge = `<span class="badge badge-${sevMap[r.severity]||'medium'}">${r.severity}</span>`;
+    const stBadge = `<span class="badge badge-${r.status||'pending'}">${smap[r.status]||r.status}</span>`;
+
+    if (role === 'admin' || role === 'government') {
+      return `<tr>
+        <td>${r.damageType}</td>
+        <td>${r.district}</td>
+        <td>${r.reporterName}</td>
+        <td>${r.reporterPhone||'-'}</td>
+        <td>${sevBadge}</td>
+        <td>${date}</td>
+        <td>${stBadge}</td>
+        <td>
+          <select class="status-select" onchange="updateStatus('${r.id}',this.value)">
+            <option value="pending" ${r.status==='pending'?'selected':''}>معلق</option>
+            <option value="reviewing" ${r.status==='reviewing'?'selected':''}>قيد المراجعة</option>
+            <option value="approved" ${r.status==='approved'?'selected':''}>موافق عليه</option>
+            <option value="done" ${r.status==='done'?'selected':''}>منجز</option>
+            <option value="rejected" ${r.status==='rejected'?'selected':''}>مرفوض</option>
+          </select>
+        </td>
+      </tr>`;
+    }
+    return `<tr>
+      <td>${r.damageType}</td>
+      <td>${r.district}</td>
+      <td>${r.address||'-'}</td>
+      <td>${sevBadge}</td>
+      <td>${date}</td>
+      <td>${stBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function updateStatus(id, status) {
+  try {
+    await fetch(`${API}/reports/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    showAlert('✅ تم تحديث الحالة');
+    loadReports();
+  } catch(e) { showAlert('❌ حدث خطأ', 'error'); }
+}
+
+// ─── المشاريع ─────────────────────────────────────────────
+async function loadProjects() {
+  const body = document.getElementById('projects-body');
+
+  if (role === 'organization') {
+    document.getElementById('add-proj-btn').style.display = 'inline-block';
+    document.getElementById('projects-desc').textContent = 'مشاريعك الجارية والمقترحة';
+    document.getElementById('proj-action-th').textContent = 'تحديث الإنجاز';
+  } else {
+    document.getElementById('projects-desc').textContent = 'جميع مشاريع إعادة الإعمار';
+    document.getElementById('proj-action-th').textContent = 'إجراء';
+  }
+
+  body.innerHTML = '<tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr>';
+
+  try {
+    const data = await fetch(`${API}/projects`).then(r => r.json());
+    const projects = data.data || [];
+    const smap = { reviewing:'قيد المراجعة', approved:'موافق عليه', active:'نشط', done:'مكتمل' };
+
+    if (!projects.length) {
+      body.innerHTML = '<tr><td colspan="6"><div class="empty"><div class="eicon">🏗️</div><p>لا توجد مشاريع</p></div></td></tr>';
+      return;
+    }
+
+    body.innerHTML = projects.map(p => `
+      <tr>
+        <td><strong>${p.name}</strong><br><small style="color:var(--text-light)">${p.organization||''}</small></td>
+        <td>${p.sector}</td>
+        <td>${p.district}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <div class="progress-bar" style="width:80px">
+              <div class="progress-fill" style="width:${p.progress||0}%"></div>
+            </div>
+            <span style="font-size:0.85rem">${p.progress||0}%</span>
+          </div>
+        </td>
+        <td><span class="badge badge-${p.status==='done'?'done':p.status==='active'?'approved':'pending'}">${smap[p.status]||p.status}</span></td>
+        <td>
+          ${role!=='community' ? `
+            <input type="number" min="0" max="100" value="${p.progress||0}"
+              style="width:65px;padding:0.3rem;border:1px solid var(--border);border-radius:6px;font-family:Cairo,sans-serif;text-align:center"
+              onchange="updateProgress('${p.id}',this.value)">
+          ` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red">تعذّر تحميل البيانات</td></tr>';
+  }
+}
+
+async function updateProgress(id, progress) {
+  try {
+    await fetch(`${API}/projects/${id}/progress`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ progress: parseInt(progress), status: progress>=100?'done':'active' })
+    });
+    showAlert('✅ تم تحديث نسبة الإنجاز');
+  } catch(e) { showAlert('❌ حدث خطأ', 'error'); }
+}
+
+function showAddProject() {
+  document.getElementById('proj-modal').style.display = 'flex';
+}
+function closeModal() {
+  document.getElementById('proj-modal').style.display = 'none';
+}
+
+async function addProject() {
+  const name = document.getElementById('proj-name').value.trim();
+  const sector = document.getElementById('proj-sector').value;
+  const district = document.getElementById('proj-district').value;
+  const desc = document.getElementById('proj-desc').value;
+  const budget = document.getElementById('proj-budget').value;
+  const start = document.getElementById('proj-start').value;
+
+  if (!name || !sector || !district) return showAlert('يرجى ملء الحقول الإلزامية', 'error');
+
+  try {
+    const res = await fetch(`${API}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, sector, district, description: desc, budget, startDate: start, organization: user?.organization || user?.name })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert('✅ تم إضافة المشروع بنجاح');
+      closeModal();
+      loadProjects();
+    } else { showAlert('❌ ' + data.message, 'error'); }
+  } catch(e) { showAlert('❌ تعذّر الاتصال', 'error'); }
+}
+
+// ─── تقارير المنظمات ──────────────────────────────────────
+let allOrgReports = [];
+
+async function loadOrgReports() {
+  const body = document.getElementById('org-reports-body');
+
+  if (role === 'organization') {
+    document.getElementById('add-report-btn').style.display = 'inline-block';
+    document.getElementById('org-reports-desc').textContent = 'تقاريرك المرفوعة وحالة مراجعتها';
+    document.getElementById('org-report-action-th').textContent = '';
+  } else {
+    document.getElementById('org-reports-desc').textContent = 'جميع التقارير الواردة من المنظمات - راجعها وأبدِ موافقتك';
+    document.getElementById('org-report-action-th').textContent = 'مراجعة الحكومة';
+  }
+
+  body.innerHTML = '<tr><td colspan="7"><div class="loading"><div class="spinner"></div></div></td></tr>';
+
+  try {
+    const data = await fetch(`${API}/org-reports`).then(r => r.json());
+    allOrgReports = data.data || [];
+    filterOrgReports();
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red">تعذّر تحميل البيانات</td></tr>';
+  }
+}
+
+function filterOrgReports() {
+  const status = document.getElementById('f-report-status')?.value || '';
+  let list = [...allOrgReports];
+  if (role === 'organization') list = list.filter(r => r.organizationName === (user.organization || user.name));
+  if (status) list = list.filter(r => r.status === status);
+  renderOrgReports(list);
+}
+
+function renderOrgReports(list) {
+  const body = document.getElementById('org-reports-body');
+  const smap = { pending: 'ينتظر المراجعة', approved: 'موافق عليه', rejected: 'مرفوض' };
+  const sbadge = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+
+  if (!list.length) {
+    body.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="eicon">📭</div><p>لا توجد تقارير</p></div></td></tr>';
+    return;
+  }
+
+  body.innerHTML = list.map(r => {
+    const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString('ar') : '-';
+    const stBadge = `<span class="badge ${sbadge[r.status]||'badge-pending'}">${smap[r.status]||r.status}</span>`;
+    const actionBtn = (role === 'admin' || role === 'government') && r.status === 'pending'
+      ? `<div style="display:flex;gap:0.5rem">
+          <button onclick="reviewReport('${r.id}','approved')" class="btn btn-success btn-sm">✅ موافقة</button>
+          <button onclick="reviewReport('${r.id}','rejected')" class="btn btn-danger btn-sm">❌ رفض</button>
+        </div>`
+      : r.governmentNotes ? `<small style="color:var(--text-light)">${r.governmentNotes}</small>` : '-';
+
+    return `<tr>
+      <td><strong>${r.projectName||'-'}</strong></td>
+      <td>${r.organizationName||'-'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div class="progress-bar" style="width:60px">
+            <div class="progress-fill" style="width:${r.progress||0}%"></div>
+          </div>
+          <span style="font-size:0.85rem">${r.progress||0}%</span>
+        </div>
+      </td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.description}">${r.description?.substring(0,60)||'-'}...</td>
+      <td>${date}</td>
+      <td>${stBadge}</td>
+      <td>${actionBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function reviewReport(id, status) {
+  const notes = status === 'rejected' ? prompt('سبب الرفض (اختياري):') || '' : '';
+  try {
+    const res = await fetch(`${API}/org-reports/${id}/review`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, notes })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showAlert('✅ ' + data.message);
+      loadOrgReports();
+    } else { showAlert('❌ ' + data.message, 'error'); }
+  } catch(e) { showAlert('❌ حدث خطأ', 'error'); }
+}
+
+// ─── المستخدمون ───────────────────────────────────────────
+async function loadUsers() {
+  const body = document.getElementById('users-body');
+  body.innerHTML = '<tr><td colspan="6"><div class="loading"><div class="spinner"></div></div></td></tr>';
+
+  try {
+    const data = await fetch(`${API}/users`).then(r => r.json());
+    const users = data.data || [];
+    const rnames = { admin:'أدمن', government:'حكومة', organization:'منظمة', community:'مواطن' };
+
+    body.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td><span class="badge badge-${u.role}">${rnames[u.role]||u.role}</span></td>
+        <td>${u.organization||'-'}</td>
+        <td><span class="badge ${u.isApproved?'badge-approved':'badge-pending'}">${u.isApproved?'✅ مفعّل':'⏳ ينتظر'}</span></td>
+        <td>
+          ${!u.isApproved
+            ? `<button onclick="approveUser('${u.id}')" class="btn btn-success btn-sm">موافقة</button>`
+            : u.id !== user?.id
+              ? `<button onclick="disableUser('${u.id}')" class="btn btn-danger btn-sm">تعطيل</button>`
+              : '-'
+          }
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red">تعذّر تحميل البيانات</td></tr>';
+  }
+}
+
+async function approveUser(id) {
+  try {
+    await fetch(`${API}/users/${id}/approve`, { method: 'PATCH' });
+    showAlert('✅ تمت الموافقة');
+    loadUsers();
+  } catch(e) { showAlert('❌ حدث خطأ', 'error'); }
+}
+
+async function disableUser(id) {
+  if (!confirm('تعطيل هذا المستخدم؟')) return;
+  try {
+    await fetch(`${API}/users/${id}/disable`, { method: 'PATCH' });
+    showAlert('تم التعطيل');
+    loadUsers();
+  } catch(e) { showAlert('❌ حدث خطأ', 'error'); }
+}
+
+// تشغيل
+loadOverview();
+</script>
+</body>
+</html>

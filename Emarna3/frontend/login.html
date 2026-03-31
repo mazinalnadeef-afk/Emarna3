@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول | إعمارنا</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+<style>
+.auth-page {
+  min-height: 100vh; display: flex; align-items: center;
+  justify-content: center; padding: 2rem;
+  background: linear-gradient(135deg, #1a4f8a 0%, #0d3060 100%);
+}
+.auth-card {
+  background: white; border-radius: 16px; padding: 2.5rem;
+  width: 100%; max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.auth-logo { text-align: center; margin-bottom: 1.5rem; }
+.auth-logo h1 { color: #1a4f8a; font-size: 2rem; font-weight: 900; }
+.auth-logo p { color: #6c757d; font-size: 0.9rem; }
+.tabs { display: flex; border-radius: 10px; overflow: hidden; border: 2px solid #1a4f8a; margin-bottom: 1.5rem; }
+.tab-btn {
+  flex: 1; padding: 0.7rem; text-align: center; cursor: pointer;
+  font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 0.95rem;
+  background: white; color: #1a4f8a; border: none; transition: all 0.2s;
+}
+.tab-btn.active { background: #1a4f8a; color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.submit-btn {
+  width: 100%; padding: 0.9rem; background: #1a4f8a; color: white;
+  border: none; border-radius: 8px; font-family: 'Cairo', sans-serif;
+  font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  margin-top: 0.5rem;
+}
+.submit-btn:hover { background: #0d3060; }
+.submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.back-link { text-align: center; margin-top: 1rem; }
+.back-link a { color: #1a4f8a; text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>🏗️ إعمارنا</h1>
+      <p>منصة إعادة الإعمار - ولاية الخرطوم</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login', this)">تسجيل الدخول</button>
+      <button class="tab-btn" onclick="switchTab('register', this)">حساب جديد</button>
+    </div>
+
+    <div id="alert-box"></div>
+
+    <!-- تسجيل الدخول -->
+    <div id="login-tab" class="tab-content active">
+      <div class="form-group">
+        <label>البريد الإلكتروني *</label>
+        <input type="email" id="login-email" placeholder="example@email.com">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور *</label>
+        <input type="password" id="login-password" placeholder="كلمة المرور">
+      </div>
+      <button class="submit-btn" onclick="handleLogin()" id="login-btn">دخول</button>
+    </div>
+
+    <!-- إنشاء حساب -->
+    <div id="register-tab" class="tab-content">
+      <div class="form-group">
+        <label>الاسم الكامل *</label>
+        <input type="text" id="reg-name" placeholder="اسمك الكامل">
+      </div>
+      <div class="form-group">
+        <label>البريد الإلكتروني *</label>
+        <input type="email" id="reg-email" placeholder="example@email.com">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف *</label>
+        <input type="tel" id="reg-phone" placeholder="09XXXXXXXXX">
+      </div>
+      <div class="form-group">
+        <label>نوع الحساب *</label>
+        <select id="reg-role" onchange="toggleOrg()">
+          <option value="community">مواطن / مجتمع</option>
+          <option value="organization">منظمة أو شركة</option>
+          <option value="government">جهة حكومية</option>
+        </select>
+      </div>
+      <div class="form-group" id="org-group" style="display:none">
+        <label>اسم المنظمة / الجهة</label>
+        <input type="text" id="reg-org" placeholder="اسم المنظمة أو الجهة">
+      </div>
+      <div class="form-group">
+        <label>كلمة المرور *</label>
+        <input type="password" id="reg-password" placeholder="6 أحرف على الأقل">
+      </div>
+      <button class="submit-btn" onclick="handleRegister()" id="register-btn">إنشاء حساب</button>
+    </div>
+
+    <div class="back-link"><a href="index.html">← العودة للرئيسية</a></div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:5000/api';
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`${tab}-tab`).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('alert-box').innerHTML = '';
+}
+
+function toggleOrg() {
+  const role = document.getElementById('reg-role').value;
+  document.getElementById('org-group').style.display =
+    (role === 'organization' || role === 'government') ? 'block' : 'none';
+}
+
+function showAlert(msg, type = 'error') {
+  const colors = { error: 'alert-error', success: 'alert-success', warning: 'alert-warning' };
+  document.getElementById('alert-box').innerHTML = `<div class="alert ${colors[type]}">${msg}</div>`;
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('login-btn');
+
+  if (!email || !password) return showAlert('يرجى ملء جميع الحقول');
+
+  btn.disabled = true;
+  btn.textContent = 'جاري الدخول...';
+
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem('emarna_token', data.token);
+      localStorage.setItem('emarna_user', JSON.stringify(data.user));
+      showAlert('✅ تم تسجيل الدخول بنجاح! جاري التحويل...', 'success');
+      setTimeout(() => { window.location.href = 'dashboard.html'; }, 1000);
+    } else {
+      showAlert('❌ ' + data.message);
+    }
+  } catch(e) {
+    showAlert('🔌 تعذّر الاتصال بالخادم - تأكد من تشغيل node server.js');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'دخول';
+  }
+}
+
+async function handleRegister() {
+  const name     = document.getElementById('reg-name').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+  const phone    = document.getElementById('reg-phone').value.trim();
+  const role     = document.getElementById('reg-role').value;
+  const org      = document.getElementById('reg-org').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const btn      = document.getElementById('register-btn');
+
+  if (!name || !email || !phone || !password) return showAlert('يرجى ملء جميع الحقول الإلزامية');
+  if (password.length < 6) return showAlert('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+
+  btn.disabled = true;
+  btn.textContent = 'جاري الإنشاء...';
+
+  try {
+    const res = await fetch(`${API}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, role, organization: org, password })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      showAlert('✅ ' + data.message, 'success');
+      setTimeout(() => switchTab('login', document.querySelector('.tab-btn')), 2000);
+    } else {
+      showAlert('❌ ' + data.message);
+    }
+  } catch(e) {
+    showAlert('🔌 تعذّر الاتصال بالخادم');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'إنشاء حساب';
+  }
+}
+</script>
+</body>
+</html>

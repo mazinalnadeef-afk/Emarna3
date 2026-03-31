@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإبلاغ عن ضرر | إعمارنا</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/main.css">
+<style>
+.report-page { max-width: 750px; margin: 2rem auto; padding: 0 1rem; }
+.severity-options { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.severity-btn {
+  flex: 1; min-width: 100px; padding: 0.6rem 1rem;
+  border: 2px solid var(--border); border-radius: 8px;
+  background: white; cursor: pointer; font-family: 'Cairo', sans-serif;
+  font-weight: 700; font-size: 0.9rem; transition: all 0.2s; text-align: center;
+}
+.severity-btn.selected { border-color: var(--primary); background: var(--primary); color: white; }
+.section-title { font-weight: 800; color: var(--primary); margin: 1.5rem 0 1rem; font-size: 1.05rem; }
+.location-btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: #e8f0fe; color: var(--primary); border: none;
+  padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer;
+  font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 0.9rem;
+  margin-top: 0.5rem; transition: all 0.2s;
+}
+.location-btn:hover { background: #d0e4ff; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-container">
+    <a href="index.html" class="nav-logo">🏗️ إعمارنا</a>
+    <div class="nav-links">
+      <a href="index.html">الرئيسية</a>
+      <a href="report.html" class="active">أبلغ عن ضرر</a>
+      <a href="projects.html">المشاريع</a>
+    </div>
+    <div class="nav-auth">
+      <a href="login.html" class="btn-nav">تسجيل الدخول</a>
+    </div>
+  </div>
+</nav>
+
+<div class="report-page">
+  <div class="card">
+    <h1 style="color:var(--primary);font-size:1.7rem;margin-bottom:0.5rem">📋 الإبلاغ عن ضرر</h1>
+    <p style="color:var(--text-light);margin-bottom:1.5rem;border-bottom:2px solid var(--bg);padding-bottom:1rem">
+      ساعدنا في توثيق الأضرار لتسهيل عملية إعادة الإعمار
+    </p>
+
+    <div id="alert-box"></div>
+
+    <!-- معلومات الضرر -->
+    <p class="section-title">📍 معلومات الضرر</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>نوع الضرر *</label>
+        <select id="damageType">
+          <option value="">اختر نوع الضرر</option>
+          <option>مسكن سكني</option>
+          <option>مبنى حكومي</option>
+          <option>مدرسة أو جامعة</option>
+          <option>مستشفى أو مركز صحي</option>
+          <option>طريق أو جسر</option>
+          <option>شبكة مياه</option>
+          <option>شبكة كهرباء</option>
+          <option>مسجد</option>
+          <option>سوق تجاري</option>
+          <option>أخرى</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>المنطقة / الحي *</label>
+        <select id="district">
+          <option value="">اختر المنطقة</option>
+          <option>أم درمان</option>
+          <option>بحري</option>
+          <option>الخرطوم</option>
+          <option>كرري</option>
+          <option>شرق النيل</option>
+          <option>جبل أولياء</option>
+          <option>أم بدة</option>
+          <option>الحاج يوسف</option>
+          <option>المقرن</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>العنوان التفصيلي *</label>
+      <input type="text" id="address" placeholder="مثال: شارع الجامعة، حي المنشية">
+    </div>
+
+    <div class="form-group">
+      <label>وصف الضرر *</label>
+      <textarea id="description" placeholder="اشرح طبيعة الضرر وحجمه بالتفصيل..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>مستوى الخطورة *</label>
+      <div class="severity-options">
+        <button class="severity-btn" onclick="selectSeverity(this, 'منخفضة')">🟢 منخفضة</button>
+        <button class="severity-btn selected" onclick="selectSeverity(this, 'متوسطة')">🟡 متوسطة</button>
+        <button class="severity-btn" onclick="selectSeverity(this, 'عالية')">🟠 عالية</button>
+        <button class="severity-btn" onclick="selectSeverity(this, 'حرجة')">🔴 حرجة</button>
+      </div>
+      <input type="hidden" id="severity" value="متوسطة">
+    </div>
+
+    <!-- الموقع -->
+    <p class="section-title">🗺️ الموقع الجغرافي</p>
+    <button class="location-btn" onclick="getLocation()">📍 تحديد موقعي تلقائياً</button>
+    <p id="location-status" style="font-size:0.85rem;color:var(--secondary);margin-top:0.3rem;display:none">✅ تم تحديد الموقع بنجاح</p>
+    <input type="hidden" id="lat">
+    <input type="hidden" id="lng">
+
+    <!-- بيانات المُبلِّغ -->
+    <p class="section-title">👤 بيانات المُبلِّغ</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label>الاسم *</label>
+        <input type="text" id="reporterName" placeholder="اسمك الكامل">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف *</label>
+        <input type="tel" id="reporterPhone" placeholder="09XXXXXXXXX">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>صفتك</label>
+        <select id="reporterRole">
+          <option value="مواطن">مواطن</option>
+          <option value="موظف حكومي">موظف حكومي</option>
+          <option value="ممثل منظمة">ممثل منظمة</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>البريد الإلكتروني (اختياري)</label>
+        <input type="email" id="reporterEmail" placeholder="للتواصل معك">
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="submitReport()" id="submit-btn" style="margin-top:1rem;padding:1rem;font-size:1.1rem">
+      📤 إرسال البلاغ
+    </button>
+  </div>
+</div>
+
+<footer class="footer">
+  <p>© 2026 منصة إعمارنا - جامعة كرري</p>
+</footer>
+
+<script>
+const API = 'http://localhost:5000/api';
+
+function showAlert(msg, type = 'error') {
+  const colors = { error: 'alert-error', success: 'alert-success' };
+  const el = document.getElementById('alert-box');
+  el.innerHTML = `<div class="alert ${colors[type]}">${msg}</div>`;
+  el.scrollIntoView({ behavior: 'smooth' });
+}
+
+function selectSeverity(btn, value) {
+  document.querySelectorAll('.severity-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  document.getElementById('severity').value = value;
+}
+
+function getLocation() {
+  if (!navigator.geolocation) return alert('المتصفح لا يدعم تحديد الموقع');
+  navigator.geolocation.getCurrentPosition(pos => {
+    document.getElementById('lat').value = pos.coords.latitude;
+    document.getElementById('lng').value = pos.coords.longitude;
+    document.getElementById('location-status').style.display = 'block';
+  }, () => alert('تعذّر تحديد الموقع'));
+}
+
+async function submitReport() {
+  const btn = document.getElementById('submit-btn');
+  const fields = {
+    damageType: document.getElementById('damageType').value,
+    district: document.getElementById('district').value,
+    address: document.getElementById('address').value.trim(),
+    description: document.getElementById('description').value.trim(),
+    reporterName: document.getElementById('reporterName').value.trim(),
+    reporterPhone: document.getElementById('reporterPhone').value.trim(),
+  };
+
+  if (Object.values(fields).some(v => !v)) {
+    return showAlert('⚠️ يرجى ملء جميع الحقول الإلزامية (*)');
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإرسال...';
+
+  try {
+    const res = await fetch(`${API}/reports`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...fields,
+        severity: document.getElementById('severity').value,
+        reporterRole: document.getElementById('reporterRole').value,
+        reporterEmail: document.getElementById('reporterEmail').value,
+        lat: document.getElementById('lat').value,
+        lng: document.getElementById('lng').value,
+      })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      showAlert(`✅ ${data.message} - رقم البلاغ: ${data.reportId}`, 'success');
+      setTimeout(() => { window.location.href = 'index.html'; }, 3000);
+    } else {
+      showAlert('❌ ' + data.message);
+    }
+  } catch(e) {
+    showAlert('🔌 تعذّر الاتصال بالخادم - تأكد من تشغيل node server.js');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 إرسال البلاغ';
+  }
+}
+</script>
+</body>
+</html>
